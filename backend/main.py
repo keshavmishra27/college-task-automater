@@ -3,7 +3,6 @@ from fastapi.middleware.cors import CORSMiddleware
 from database import engine, Base
 from routers import medical, stationery, announcements, parking
 import os
-from datetime import datetime
 
 # Create tables
 Base.metadata.create_all(bind=engine)
@@ -44,5 +43,4 @@ def read_root():
 
 if __name__ == "__main__":
     import uvicorn
-    # Use reload=True and string import for development
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run(app, host="0.0.0.0", port=8000)
