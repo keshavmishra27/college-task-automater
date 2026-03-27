@@ -633,39 +633,8 @@ volumes:
 
 ## 🧪 Testing & Quality
 
-### 📋 Test Coverage
-```mermaid
-%%{init: {
-  'theme': 'base',
-  'themeVariables': {
-    'primaryColor': '#f59e0b',
-    'primaryTextColor': '#ffffff',
-    'primaryBorderColor': '#d97706',
-    'lineColor': '#10b981',
-    'sectionBkgColor': '#1e293b',
-    'altSectionBkgColor': '#334155'
-  }
-}}%%
-gitgraph
-    commit id: "🚀 Initial Setup"
-    commit id: "📦 Add Backend"
-    commit id: "⚛️ Add Frontend"
-    branch feature/medical
-    checkout feature/medical
-    commit id: "🏥 Medical Module"
-    commit id: "🧪 Add Tests"
-    checkout main
-    merge feature/medical
-    branch feature/ai
-    checkout feature/ai
-    commit id: "🤖 AI Integration"
-    commit id: "🎤 Voice Features"
-    checkout main
-    merge feature/ai
-    commit id: "📊 Analytics"
-    commit id: "🔧 Optimization"
-    commit id: "🚀 Production Ready"
-```
+### 🧪 Test Coverage
+The project follows comprehensive testing practices with unit tests, integration tests, and end-to-end testing to ensure code quality and reliability.
 
 ### 🧪 Test Commands
 ```bash
