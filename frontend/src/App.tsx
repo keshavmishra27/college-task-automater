@@ -17,7 +17,7 @@ const Sidebar = () => {
     { path: '/', name: 'Home', icon: <FaHome /> },
     { path: '/medical', name: 'Medical Room', icon: <FaBriefcaseMedical /> },
     { path: '/stationery', name: 'Stationery Store', icon: <FaStore /> },
-    { path: '/announcements', name: 'Announcements', icon: <FaBullhorn /> },
+    { path: '/announcements', name: 'Voice Agency', icon: <FaBullhorn /> },
     { path: '/parking', name: 'Smart Parking', icon: <FaParking /> },
   ];
 

@@ -15,3 +15,4 @@ class MedicalRecord(Base):
     severity = Column(String, default="low")  # low, medium, high, critical
     treatment_status = Column(String, default="pending")  # pending, treating, discharged
     parent_contact = Column(String, nullable=True)
+    address = Column(String, nullable=True)

@@ -22,16 +22,25 @@ const Stationery = () => {
   });
 
   const fetchData = async () => {
+    setLoading(true);
     try {
-      const [resItems, resDashboard] = await Promise.all([
-        api.get('/stationery'),
-        api.get('/stationery/analytics'),
-      ]);
+      // 1. Fetch Items (Priority)
+      const resItems = await api.get('stationery/');
       setItems(resItems.data);
-      setStats(resDashboard.data.stats);
-      setInsights(resDashboard.data.insights);
-    } catch (err) {
-      toast.error('Failed to fetch stationery data');
+      
+      // 2. Fetch Analytics (Non-blocking)
+      try {
+        const resDashboard = await api.get('stationery/analytics');
+        setStats(resDashboard.data.stats);
+        setInsights(resDashboard.data.insights);
+      } catch (analyticsErr: any) {
+        console.warn('Stationery analytics failed', analyticsErr);
+        toast.error('Inventory analytics unavailable');
+      }
+    } catch (err: any) {
+      const msg = err.response?.data?.detail || err.message;
+      toast.error('Failed to fetch stationery: ' + msg);
+      console.error('Fetch error:', err);
     } finally {
       setLoading(false);
     }
@@ -44,7 +53,7 @@ const Stationery = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await api.post('/stationery', formData);
+      await api.post('stationery/', formData);
       toast.success('Item added');
       setShowModal(false);
       fetchData();
@@ -56,7 +65,7 @@ const Stationery = () => {
   const handleMakeProposal = async () => {
     try {
       toast.loading('Generating AI Proposal...', { id: 'proposal' });
-      const res = await api.post('/stationery/proposal');
+      const res = await api.post('stationery/proposal');
       setProposal(res.data.proposal);
       setShowProposal(true);
       toast.success('Proposal ready!', { id: 'proposal' });
@@ -127,7 +136,7 @@ const Stationery = () => {
                 <td>{i.student_demand}</td>
                 <td>{i.category}</td>
                 <td style={{ padding: '1rem' }}>
-                  <button onClick={async () => { await api.delete(`/stationery/${i.id}`); fetchData(); }} style={{ color: '#ff4d4d' }}><FaTrash /></button>
+                  <button onClick={async () => { await api.delete(`stationery/${i.id}`); fetchData(); }} style={{ color: '#ff4d4d' }}><FaTrash /></button>
                 </td>
               </tr>
             ))}
@@ -137,18 +146,28 @@ const Stationery = () => {
 
       {showProposal && (
         <div className="modal-overlay" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div className="glass-card" style={{ width: '800px', maxHeight: '80vh', overflowY: 'auto', backgroundColor: '#12121a' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
+          <div className="glass-card" style={{ width: '800px', maxHeight: '90vh', overflowY: 'auto', backgroundColor: '#12121a', position: 'relative' }}>
+            <button 
+              onClick={() => setShowProposal(false)}
+              style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'transparent', border: 'none', color: '#666', fontSize: '1.5rem', cursor: 'pointer', zIndex: 10 }}
+              title="Close"
+            >
+              &times;
+            </button>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem', paddingRight: '2rem' }}>
               <h3>AI Procurement Proposal</h3>
-              <button onClick={downloadProposal} className="btn-primary" style={{ padding: '0.4rem 1rem', fontSize: '0.8rem' }}><FaDownload /> Export MD</button>
+              <button onClick={downloadProposal} className="btn-primary" style={{ padding: '0.4rem 1rem', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <FaDownload /> Export MD
+              </button>
             </div>
             <textarea
-              style={{ width: '100%', height: '400px', background: '#0a0a0f', color: '#fff', border: '1px solid #333', padding: '1rem', fontFamily: 'monospace' }}
+              style={{ width: '100%', height: '450px', background: '#0a0a0f', color: '#fff', border: '1px solid #333', padding: '1rem', fontFamily: 'monospace', borderRadius: '8px' }}
               value={proposal}
               onChange={(e) => setProposal(e.target.value)}
             />
-            <div style={{ marginTop: '1.5rem', textAlign: 'right' }}>
-              <button onClick={() => setShowProposal(false)} className="btn-primary">Close</button>
+            <div style={{ marginTop: '1.5rem', textAlign: 'right', display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
+              <button onClick={() => setShowProposal(false)} className="btn-primary" style={{ background: 'transparent', border: '1px solid #333' }}>Discard</button>
+              <button onClick={() => { downloadProposal(); setShowProposal(false); }} className="btn-primary">Export & Close</button>
             </div>
           </div>
         </div>

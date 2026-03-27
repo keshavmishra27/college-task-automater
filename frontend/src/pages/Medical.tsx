@@ -19,19 +19,33 @@ const Medical = () => {
     severity: 'low',
     treatment_status: 'pending',
     parent_contact: '',
+    address: '',
   });
+  const [showCabModal, setShowCabModal] = useState(false);
+  const [selectedStudent, setSelectedStudent] = useState<any>(null);
+  const [estimates, setEstimates] = useState<{ uber: string; ola: string } | null>(null);
+  const [calcLoading, setCalcLoading] = useState(false);
 
   const fetchData = async () => {
+    setLoading(true);
     try {
-      const [resRecords, resDashboard] = await Promise.all([
-        api.get('/medical'),
-        api.get('/medical/analytics'),
-      ]);
+      // 1. Fetch Records (Priority)
+      const resRecords = await api.get('medical/');
       setRecords(resRecords.data);
-      setStats(resDashboard.data.stats);
-      setInsights(resDashboard.data.insights);
-    } catch (err) {
-      toast.error('Failed to fetch medical data');
+      
+      // 2. Fetch Analytics (Non-blocking)
+      try {
+        const resDashboard = await api.get('medical/analytics');
+        setStats(resDashboard.data.stats);
+        setInsights(resDashboard.data.insights);
+      } catch (analyticsErr: any) {
+        console.warn('Analytics failed to load', analyticsErr);
+        toast.error('Dashboard analytics unavailable');
+      }
+    } catch (err: any) {
+      const msg = err.response?.data?.detail || err.message;
+      toast.error('Failed to fetch medical records: ' + msg);
+      console.error('Fetch error:', err);
     } finally {
       setLoading(false);
     }
@@ -44,7 +58,7 @@ const Medical = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await api.post('/medical', formData);
+      await api.post('medical/', formData);
       toast.success('Record added successfully');
       setShowModal(false);
       fetchData();
@@ -56,7 +70,7 @@ const Medical = () => {
   const handleDelete = async (id: number) => {
     if (!window.confirm('Are you sure?')) return;
     try {
-      await api.delete(`/medical/${id}`);
+      await api.delete(`medical/${id}`);
       toast.success('Record deleted');
       fetchData();
     } catch (err) {
@@ -64,9 +78,103 @@ const Medical = () => {
     }
   };
 
+  const getGeocode = async (address: string) => {
+    try {
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1`);
+      const data = await res.json();
+      if (data && data[0]) {
+        return { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) };
+      }
+    } catch (e) {
+      console.error('Geocoding failed', e);
+    }
+    return null;
+  };
+
+  const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+    const R = 6371; // km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+  };
+
+  useEffect(() => {
+    if (showCabModal && selectedStudent?.address) {
+      setCalcLoading(true);
+      setEstimates(null);
+      
+      const fetchEstimates = async () => {
+        // 1. Get Destination Coords
+        const destCoords = await getGeocode(selectedStudent.address);
+        
+        // 2. Get User Coords
+        navigator.geolocation.getCurrentPosition(async (pos) => {
+          const userLat = pos.coords.latitude;
+          const userLon = pos.coords.longitude;
+          
+          if (destCoords) {
+            const distance = calculateDistance(userLat, userLon, destCoords.lat, destCoords.lon);
+            // Mock Pricing: ₹50 base + ₹12/km (Uber), ₹45 base + ₹11.5/km (Ola)
+            const uberPrice = 50 + (distance * 12);
+            const olaPrice = 45 + (distance * 11.5);
+            setEstimates({
+              uber: `₹${Math.round(uberPrice)}`,
+              ola: `₹${Math.round(olaPrice)}`
+            });
+          }
+          setCalcLoading(false);
+        }, () => setCalcLoading(false));
+      };
+
+      fetchEstimates();
+    }
+  }, [showCabModal, selectedStudent]);
+
+  const handleCabSearch = (brand: string) => {
+    const destination = selectedStudent?.address ? encodeURIComponent(selectedStudent.address) : '';
+    const query = brand ? `${brand} cabs near me` : 'cabs near me';
+
+    const openUrls = (lat?: number, lng?: number) => {
+      let url = '';
+      const origin = lat && lng ? `${lat},${lng}` : 'current+location';
+      
+      if (brand === 'Uber') {
+        const pickupStr = lat && lng ? `pickup[latitude]=${lat}&pickup[longitude]=${lng}` : 'pickup=my_location';
+        url = `https://m.uber.com/ul/?action=setPickup&${pickupStr}${destination ? `&dropoff[formatted_address]=${destination}` : ''}`;
+      } else if (brand === 'Ola') {
+        // Ola doesn't have a very reliable public web deep link for destination pre-fill, 
+        // but this search route with parameters is the best-effort approach.
+        url = `https://book.olacabs.com/?pickup_name=Current+Location&drop_name=${destination || 'me'}`;
+      } else if (brand === 'Rapido') {
+        url = `https://www.google.com/maps/search/Rapido+bike+taxi+at+${destination || 'me'}`;
+      } else {
+        // Fallback or "General": Use Google Maps search for nearby cab services (As requested)
+        url = `https://www.google.com/maps/search/cabs+near+me/@${lat || 28.6139},${lng || 77.2090},14z`;
+      }
+
+      if (url) {
+        window.open(url, '_blank');
+      }
+      setShowCabModal(false);
+    };
+
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => openUrls(pos.coords.latitude, pos.coords.longitude),
+        () => openUrls()
+      );
+    } else {
+      openUrls();
+    }
+  };
+
   const handleVoiceResult = async (text: string) => {
     try {
-      const res = await api.post('/medical/voice', null, { params: { command: text } });
+      const res = await api.post('medical/voice', null, { params: { command: text } });
       // In a real app, we'd parse the structured 'data' from the LLM response
       // For now, let's just show the raw logic
       toast.success('AI parsed: ' + text);
@@ -130,7 +238,10 @@ const Medical = () => {
                 <td>{r.treatment_status}</td>
                 <td style={{ display: 'flex', gap: '0.5rem', padding: '1rem' }}>
                   <button onClick={() => toast('Calling parent...')} title="Call Parent"><FaPhone /></button>
-                  <button onClick={() => window.open(`https://www.google.com/maps/search/cabs+near+me`)} title="Search Cabs"><FaTaxi /></button>
+                  <button onClick={() => {
+                    setSelectedStudent(r);
+                    setShowCabModal(true);
+                  }} title="Search Cabs"><FaTaxi /></button>
                   <button onClick={() => handleDelete(r.id)} style={{ color: '#ff4d4d' }} title="Delete"><FaTrash /></button>
                 </td>
               </tr>
@@ -157,11 +268,50 @@ const Medical = () => {
                 <option value="critical">Critical</option>
               </select>
               <input type="text" placeholder="Parent Contact" onChange={e => setFormData({...formData, parent_contact: e.target.value})} />
+              <textarea placeholder="Destination Address (for automatic cab booking)" onChange={e => setFormData({...formData, address: e.target.value})} style={{ background: '#0a0a0f', border: '1px solid #333', padding: '0.8rem', borderRadius: '8px', color: 'white' }} />
               <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
                 <button type="submit" className="btn-primary" style={{ flex: 1 }}>Add Record</button>
                 <button type="button" onClick={() => setShowModal(false)} style={{ background: 'transparent', color: 'white' }}>Cancel</button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+      {showCabModal && (
+        <div className="modal-overlay" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1100 }}>
+          <div className="glass-card" style={{ width: '400px', backgroundColor: '#12121a', textAlign: 'center' }}>
+            <div style={{ background: 'rgba(255,255,255,0.05)', padding: '1rem', borderRadius: '12px', marginBottom: '1.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
+                <span>Destination:</span>
+                <span style={{ color: 'var(--accent-primary)', fontWeight: 500 }}>{selectedStudent?.address?.substring(0, 25)}...</span>
+              </div>
+              {calcLoading ? (
+                <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Calculating estimates...</div>
+              ) : estimates ? (
+                <div style={{ display: 'flex', justifyContent: 'space-around', marginTop: '0.5rem' }}>
+                  <div style={{ textAlign: 'center' }}>
+                    <div style={{ fontSize: '0.75rem', opacity: 0.6 }}>Uber Min.</div>
+                    <div style={{ color: '#fff', fontSize: '1.1rem', fontWeight: 'bold' }}>{estimates.uber}</div>
+                  </div>
+                  <div style={{ width: '1px', background: 'rgba(255,255,255,0.1)' }}></div>
+                  <div style={{ textAlign: 'center' }}>
+                    <div style={{ fontSize: '0.75rem', opacity: 0.6 }}>Ola Min.</div>
+                    <div style={{ color: '#fff', fontSize: '1.1rem', fontWeight: 'bold' }}>{estimates.ola}</div>
+                  </div>
+                </div>
+              ) : (
+                <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Add address to see estimates</div>
+              )}
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <button className="btn-primary" onClick={() => handleCabSearch('Uber')} style={{ background: '#000', border: '1px solid #333' }}>Uber</button>
+              <button className="btn-primary" onClick={() => handleCabSearch('Ola')} style={{ background: '#f5d414', color: '#000' }}>Ola</button>
+              <button className="btn-primary" onClick={() => handleCabSearch('Rapido')} style={{ background: '#ffcc00', color: '#000' }}>Rapido</button>
+              <button className="btn-primary" onClick={() => handleCabSearch('')} style={{ background: 'var(--card-bg)' }}>General</button>
+            </div>
+            
+            <button onClick={() => setShowCabModal(false)} style={{ marginTop: '1.5rem', background: 'transparent', color: 'var(--text-secondary)', border: 'none', cursor: 'pointer' }}>Cancel</button>
           </div>
         </div>
       )}

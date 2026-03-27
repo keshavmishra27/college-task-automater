@@ -45,12 +45,19 @@ async def get_parking_dashboard(db: Session = Depends(get_db)):
 
 @router.post("/detect")
 async def detect_parking_slots(image: UploadFile = File(...)):
-    # Simulated CV detection
-    return {
-        "slots": [
-            {"id": 1, "status": "occupied", "car_number": "MH12-AB-1234"},
-            {"id": 2, "status": "free", "car_number": None},
-            {"id": 3, "status": "occupied", "car_number": "MH12-XY-5678"},
-            {"id": 4, "status": "free", "car_number": None},
-        ]
-    }
+    # Simulated CV detection for 10 slots
+    import random
+    
+    prefixes = ["MH12", "DL04", "KA01", "TN07", "HR26"]
+    
+    slots = []
+    for i in range(1, 11):
+        is_occupied = random.choice([True, False])
+        car_num = f"{random.choice(prefixes)}-{chr(random.randint(65, 90))}{chr(random.randint(65, 90))}-{random.randint(1000, 9999)}" if is_occupied else None
+        slots.append({
+            "id": i,
+            "status": "occupied" if is_occupied else "free",
+            "car_number": car_num
+        })
+    
+    return {"slots": slots, "processing_time": "0.8s", "confidence": 0.94}

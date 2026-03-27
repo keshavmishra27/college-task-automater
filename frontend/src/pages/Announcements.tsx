@@ -22,11 +22,13 @@ const Announcements = () => {
   ];
 
   const fetchAnnouncements = async () => {
+    setLoading(true);
     try {
-      const res = await api.get('/announcements');
+      const res = await api.get('announcements/');
       setAnnouncements(res.data);
-    } catch (err) {
-      toast.error('Failed to fetch announcements');
+    } catch (err: any) {
+      const msg = err.response?.data?.detail || err.message;
+      toast.error('Failed to fetch announcements: ' + msg);
     } finally {
       setLoading(false);
     }
@@ -39,7 +41,7 @@ const Announcements = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await api.post('/announcements', { message, language, repeat_interval: repeat });
+      await api.post('announcements/', { message, language, repeat_interval: repeat });
       toast.success('Announcement scheduled');
       setMessage('');
       fetchAnnouncements();
@@ -51,7 +53,7 @@ const Announcements = () => {
   const handleSpeak = async (id: number) => {
     try {
       toast.loading('Synthesizing speech...', { id: 'tts' });
-      const res = await api.post(`/announcements/${id}/speak`, {}, { responseType: 'blob' });
+      const res = await api.post(`announcements/${id}/speak`, {}, { responseType: 'blob' });
       const audioUrl = URL.createObjectURL(res.data);
       const audio = new Audio(audioUrl);
       audio.play();
@@ -63,7 +65,7 @@ const Announcements = () => {
 
   const handleDelete = async (id: number) => {
     try {
-      await api.delete(`/announcements/${id}`);
+      await api.delete(`announcements/${id}`);
       toast.success('Announcement removed');
       fetchAnnouncements();
     } catch (err) {

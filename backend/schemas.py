@@ -12,6 +12,7 @@ class MedicalRecordBase(BaseModel):
     severity: str = "low"
     treatment_status: str = "pending"
     parent_contact: Optional[str] = None
+    address: Optional[str] = None
 
 
 class MedicalRecordCreate(MedicalRecordBase):
@@ -26,6 +27,7 @@ class MedicalRecordUpdate(BaseModel):
     severity: Optional[str] = None
     treatment_status: Optional[str] = None
     parent_contact: Optional[str] = None
+    address: Optional[str] = None
 
 
 class MedicalRecordOut(MedicalRecordBase):
