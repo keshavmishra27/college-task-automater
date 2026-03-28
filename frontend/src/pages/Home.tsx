@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api';
-import { FaServer, FaCheckCircle, FaExclamationTriangle, FaTerminal, FaWifi } from 'react-icons/fa';
+import { FaServer, FaCheckCircle, FaExclamationTriangle, FaTerminal, FaWifi, FaSync } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import { FaBriefcaseMedical, FaStore, FaBullhorn, FaParking } from 'react-icons/fa';
 
@@ -9,16 +9,18 @@ const Home = () => {
   const [backendStatus, setBackendStatus] = useState<'checking' | 'online' | 'offline'>('checking');
   const [errorMsg, setErrorMsg] = useState('');
 
+  const checkHealth = async () => {
+    setBackendStatus('checking');
+    try {
+      await api.get('health');
+      setBackendStatus('online');
+    } catch (err: any) {
+      setBackendStatus('offline');
+      setErrorMsg(err.message || 'Connection refused');
+    }
+  };
+
   useEffect(() => {
-    const checkHealth = async () => {
-      try {
-        await api.get('health');
-        setBackendStatus('online');
-      } catch (err: any) {
-        setBackendStatus('offline');
-        setErrorMsg(err.message || 'Connection refused');
-      }
-    };
     checkHealth();
   }, []);
   
@@ -111,9 +113,18 @@ const Home = () => {
              </div>
           </div>
 
-          {backendStatus === 'offline' && (
+          {(backendStatus === 'offline' || backendStatus === 'checking') && (
             <div style={{ background: 'rgba(0,0,0,0.2)', padding: '1rem', borderRadius: '8px', fontSize: '0.85rem' }}>
-              <strong style={{ color: '#ff4d4d' }}>Error:</strong> {errorMsg}
+              {backendStatus === 'offline' ? (
+                <>
+                  <strong style={{ color: '#ff4d4d' }}>Error:</strong> {errorMsg}
+                </>
+              ) : (
+                <div style={{ color: 'var(--accent-primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <FaSync size={12} className="spin" /> Verifying connection...
+                </div>
+              )}
+              
               <div style={{ marginTop: '1rem', display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <FaTerminal size={12} /> Run <code>start_backend.bat</code>
@@ -121,6 +132,28 @@ const Home = () => {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <FaWifi size={12} /> Check local firewall (Port 8000)
                 </div>
+                <button 
+                  onClick={checkHealth}
+                  disabled={backendStatus === 'checking'}
+                  style={{ 
+                    marginTop: '0.5rem',
+                    padding: '0.5rem',
+                    background: backendStatus === 'checking' ? '#444' : 'var(--accent-primary)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: backendStatus === 'checking' ? 'not-allowed' : 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.5rem',
+                    fontSize: '0.8rem',
+                    fontWeight: 600
+                  }}
+                >
+                  <FaSync size={10} className={backendStatus === 'checking' ? 'spin' : ''} />
+                  {backendStatus === 'checking' ? 'Checking...' : 'Retry Connection'}
+                </button>
               </div>
             </div>
           )}

@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from database import engine, Base
 from routers import medical, stationery, announcements, parking
 import os
+from datetime import datetime
 
 # Create tables
 Base.metadata.create_all(bind=engine)
@@ -29,7 +30,10 @@ app.add_middleware(
 # Health Check
 @app.get("/api/health")
 def health_check():
-    return {"status": "ok", "timestamp": datetime.utcnow().isoformat()}
+    try:
+        return {"status": "ok", "timestamp": datetime.utcnow().isoformat()}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
 
 # Routes
 app.include_router(medical.router)

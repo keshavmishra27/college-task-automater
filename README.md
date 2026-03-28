@@ -217,18 +217,6 @@ sequenceDiagram
     A-->>F: 📋 JSON Response
     F->>F: 🎨 Render Table
     F-->>U: 📊 Display Records
-    
-    classDef user fill:#10b981,stroke:#059669,color:#ffffff
-    classDef frontend fill:#3b82f6,stroke:#2563eb,color:#ffffff
-    classDef backend fill:#8b5cf6,stroke:#7c3aed,color:#ffffff
-    classDef database fill:#ec4899,stroke:#db2777,color:#ffffff
-    classDef ai fill:#f59e0b,stroke:#d97706,color:#ffffff
-    
-    class U user
-    class F frontend
-    class A,M backend
-    class D database
-    class AI ai
 ```
 
 ---
