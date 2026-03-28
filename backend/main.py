@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from database import engine, Base
-from routers import medical, stationery, announcements, parking
+from backend.database import engine, Base
+from backend.routers import medical, stationery, announcements, parking
 import os
 from datetime import datetime
 
@@ -48,3 +48,4 @@ def read_root():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
+

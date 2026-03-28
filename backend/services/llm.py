@@ -100,3 +100,4 @@ Be precise and extract all mentioned data fields."""
     user = f"Parse this command: {text}"
     result = await _ask_llm(system, user)
     return {"raw": result, "command": text}
+

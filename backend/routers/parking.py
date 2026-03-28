@@ -1,11 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from sqlalchemy.orm import Session
 from typing import List
-from database import get_db
-from models.parking import ParkingRecord
-from schemas import ParkingRecordCreate, ParkingRecordUpdate, ParkingRecordOut
-from services.analytics import get_parking_analytics
-from services.llm import get_parking_insights
+from backend.database import get_db
+from backend.models.parking import ParkingRecord
+from backend.schemas import ParkingRecordCreate, ParkingRecordUpdate, ParkingRecordOut
+from backend.services.analytics import get_parking_analytics
+from backend.services.llm import get_parking_insights
 from datetime import datetime
 
 router = APIRouter(prefix="/api/parking", tags=["Parking"])
@@ -61,3 +61,4 @@ async def detect_parking_slots(image: UploadFile = File(...)):
         })
     
     return {"slots": slots, "processing_time": "0.8s", "confidence": 0.94}
+

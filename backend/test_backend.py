@@ -1,7 +1,7 @@
 from fastapi.testclient import TestClient
 from main import app
-from database import Base, engine, SessionLocal
-from models.parking import ParkingRecord
+from backend.database import Base, engine, SessionLocal
+from backend.models.parking import ParkingRecord
 
 # Ensure tables are created
 Base.metadata.create_all(bind=engine)
@@ -15,3 +15,4 @@ def test_create_parking():
 
 if __name__ == "__main__":
     test_create_parking()
+

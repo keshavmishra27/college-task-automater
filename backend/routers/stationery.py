@@ -1,11 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
-from database import get_db
-from models.stationery import StationeryItem
-from schemas import StationeryItemCreate, StationeryItemUpdate, StationeryItemOut
-from services.analytics import get_stationery_analytics
-from services.llm import get_stationery_insights, generate_proposal, parse_voice_command
+from backend.database import get_db
+from backend.models.stationery import StationeryItem
+from backend.schemas import StationeryItemCreate, StationeryItemUpdate, StationeryItemOut
+from backend.services.analytics import get_stationery_analytics
+from backend.services.llm import get_stationery_insights, generate_proposal, parse_voice_command
 
 router = APIRouter(prefix="/api/stationery", tags=["Stationery"])
 
@@ -62,3 +62,4 @@ async def make_proposal(db: Session = Depends(get_db)):
 @router.post("/voice")
 async def process_stationery_voice(command: str):
     return await parse_voice_command(command, "stationery")
+

@@ -1,10 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
-from database import get_db
-from models.announcement import Announcement
-from schemas import AnnouncementCreate, AnnouncementOut
-from services.tts import generate_speech
+from backend.database import get_db
+from backend.models.announcement import Announcement
+from backend.schemas import AnnouncementCreate, AnnouncementOut
+from backend.services.tts import generate_speech
 from fastapi.responses import FileResponse
 
 router = APIRouter(prefix="/api/announcements", tags=["Announcements"])
@@ -40,3 +40,4 @@ async def speak_announcement(announcement_id: int, db: Session = Depends(get_db)
     
     audio_path = await generate_speech(db_announcement.message, db_announcement.language)
     return FileResponse(audio_path, media_type="audio/mpeg")
+

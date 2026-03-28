@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String, DateTime
 from datetime import datetime
-from database import Base
+from backend.database import Base
 
 
 class MedicalRecord(Base):
@@ -16,3 +16,4 @@ class MedicalRecord(Base):
     treatment_status = Column(String, default="pending")  # pending, treating, discharged
     parent_contact = Column(String, nullable=True)
     address = Column(String, nullable=True)
+

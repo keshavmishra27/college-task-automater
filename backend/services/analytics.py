@@ -1,9 +1,9 @@
 from collections import Counter
 from datetime import datetime, timedelta
 from sqlalchemy.orm import Session
-from models.medical import MedicalRecord
-from models.stationery import StationeryItem
-from models.parking import ParkingRecord
+from backend.models.medical import MedicalRecord
+from backend.models.stationery import StationeryItem
+from backend.models.parking import ParkingRecord
 
 
 def get_medical_analytics(db: Session) -> dict:
@@ -75,3 +75,4 @@ def get_parking_analytics(db: Session) -> dict:
         "hourly": [{"hour": h, "count": c} for h, c in hourly_sorted],
         "slot_usage": [{"slot": s, "count": c} for s, c in sorted(slot_usage.items())],
     }
+

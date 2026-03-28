@@ -1,11 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
-from database import get_db
-from models.medical import MedicalRecord
-from schemas import MedicalRecordCreate, MedicalRecordUpdate, MedicalRecordOut
-from services.analytics import get_medical_analytics
-from services.llm import get_medical_insights, parse_voice_command
+from backend.database import get_db
+from backend.models.medical import MedicalRecord
+from backend.schemas import MedicalRecordCreate, MedicalRecordUpdate, MedicalRecordOut
+from backend.services.analytics import get_medical_analytics
+from backend.services.llm import get_medical_insights, parse_voice_command
 
 router = APIRouter(prefix="/api/medical", tags=["Medical"])
 
@@ -56,3 +56,4 @@ async def get_medical_dashboard(db: Session = Depends(get_db)):
 @router.post("/voice")
 async def process_medical_voice(command: str):
     return await parse_voice_command(command, "medical")
+

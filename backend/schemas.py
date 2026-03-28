@@ -112,3 +112,4 @@ class ParkingRecordOut(ParkingRecordBase):
 
     class Config:
         from_attributes = True
+

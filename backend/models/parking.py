@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String, DateTime
 from datetime import datetime
-from database import Base
+from backend.database import Base
 
 
 class ParkingRecord(Base):
@@ -12,3 +12,4 @@ class ParkingRecord(Base):
     time_in = Column(DateTime, default=datetime.utcnow)
     time_out = Column(DateTime, nullable=True)
     status = Column(String, default="occupied")  # occupied, free
+

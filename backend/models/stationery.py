@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String, Float, Date
 from datetime import date
-from database import Base
+from backend.database import Base
 
 
 class StationeryItem(Base):
@@ -13,3 +13,4 @@ class StationeryItem(Base):
     category = Column(String, nullable=True)
     purchase_date = Column(Date, default=date.today)
     student_demand = Column(Integer, default=0)
+

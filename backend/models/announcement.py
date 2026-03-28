@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String, Text, Boolean, DateTime
 from datetime import datetime
-from database import Base
+from backend.database import Base
 
 
 class Announcement(Base):
@@ -12,3 +12,4 @@ class Announcement(Base):
     repeat_interval = Column(Integer, default=0)  # seconds, 0 = no repeat
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.utcnow)
+
