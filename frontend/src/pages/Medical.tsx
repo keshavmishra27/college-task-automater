@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api';
 import VoiceButton from '../components/VoiceButton';
+import VoiceAssistant from '../components/VoiceAssistant';
 import ChartCard from '../components/ChartCard';
 import toast from 'react-hot-toast';
-import { FaPlus, FaTrash, FaEdit, FaPhone, FaTaxi } from 'react-icons/fa';
+import { FaPlus, FaTrash, FaEdit, FaPhone, FaTaxi, FaRobot } from 'react-icons/fa';
 
 const Medical = () => {
   const [records, setRecords] = useState<any[]>([]);
@@ -11,6 +12,7 @@ const Medical = () => {
   const [insights, setInsights] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [showAssistant, setShowAssistant] = useState(false);
   const [formData, setFormData] = useState({
     student_name: '',
     branch: '',
@@ -146,13 +148,10 @@ const Medical = () => {
         const pickupStr = lat && lng ? `pickup[latitude]=${lat}&pickup[longitude]=${lng}` : 'pickup=my_location';
         url = `https://m.uber.com/ul/?action=setPickup&${pickupStr}${destination ? `&dropoff[formatted_address]=${destination}` : ''}`;
       } else if (brand === 'Ola') {
-        // Ola doesn't have a very reliable public web deep link for destination pre-fill, 
-        // but this search route with parameters is the best-effort approach.
         url = `https://book.olacabs.com/?pickup_name=Current+Location&drop_name=${destination || 'me'}`;
       } else if (brand === 'Rapido') {
         url = `https://www.google.com/maps/search/Rapido+bike+taxi+at+${destination || 'me'}`;
       } else {
-        // Fallback or "General": Use Google Maps search for nearby cab services (As requested)
         url = `https://www.google.com/maps/search/cabs+near+me/@${lat || 28.6139},${lng || 77.2090},14z`;
       }
 
@@ -175,21 +174,38 @@ const Medical = () => {
   const handleVoiceResult = async (text: string) => {
     try {
       const res = await api.post('medical/voice', null, { params: { command: text } });
-      // In a real app, we'd parse the structured 'data' from the LLM response
-      // For now, let's just show the raw logic
       toast.success('AI parsed: ' + text);
     } catch (err) {
       toast.error('Voice parsing failed');
     }
   };
 
-  if (loading) return <div style={{ textAlign: 'center', padding: '5rem' }}>Loading Medical Dashboard...</div>;
+  const handleAssistantComplete = async (data: any) => {
+    try {
+      await api.post('medical/', data);
+      toast.success('Record added by Arjun!');
+      setShowAssistant(false);
+      fetchData();
+    } catch (err) {
+      toast.error('Failed to save record from Assistant');
+    }
+  };
 
   return (
     <div className="medical-page">
+      {showAssistant && (
+        <VoiceAssistant 
+          context="medical" 
+          onComplete={handleAssistantComplete} 
+          onClose={() => setShowAssistant(false)} 
+        />
+      )}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
         <h2>Medical Room Management</h2>
         <div style={{ display: 'flex', gap: '1rem' }}>
+          <button className="btn-primary" onClick={() => setShowAssistant(true)} style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
+            <FaRobot /> Start Arjun (AI)
+          </button>
           <VoiceButton onResult={handleVoiceResult} />
           <button className="btn-primary" onClick={() => setShowModal(true)}>
             <FaPlus /> Add Record

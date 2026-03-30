@@ -1,7 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from backend.database import engine, Base
-from backend.routers import medical, stationery, announcements, parking
+from fastapi.staticfiles import StaticFiles
+from backend.routers import medical, stationery, announcements, parking, voice
 import os
 from datetime import datetime
 
@@ -9,6 +10,11 @@ from datetime import datetime
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="CampusAI API", version="1.0.0")
+
+# Mount audio cache
+AUDIO_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "audio_cache")
+os.makedirs(AUDIO_DIR, exist_ok=True)
+app.mount("/audio", StaticFiles(directory=AUDIO_DIR), name="audio")
 
 # Logging Middleware
 @app.middleware("http")
@@ -40,6 +46,7 @@ app.include_router(medical.router)
 app.include_router(stationery.router)
 app.include_router(announcements.router)
 app.include_router(parking.router)
+app.include_router(voice.router)
 
 @app.get("/")
 def read_root():
